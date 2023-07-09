@@ -48,11 +48,12 @@ module structure() {
     northwest_beam();
     north_rafters();
     
-    
+    /*
     // Still a work in progress, obvs
     platform();
     translate([(tower_rafters - 1) * rafter_spacing, 0, 30]) x();
     translate([(tower_rafters + swing_rafters - 1) * rafter_spacing, 0, 30]) x();
+    /**/
 }
 
 $fn = 128;
@@ -249,4 +250,133 @@ module x() {
     translate([0, 0, 7.778+38]) cube([5.5, 53.5, 5.5]);
 }
 
-structure();
+/*
+The specified length becomes the length of the longest side of the brace
+If the angle is negative, it's made to connect a south beam to a north post
+    The z you translate to should be the bottom of the beam
+    The x you translate to should be the south face of the post
+If the angle is positive, it's made to connect a south post to a north beam
+    The z you translate to should be the bottom of the beam
+    The x you translate to should be the north face of the post
+The y you translate to should be the center of the post/beam. The knee brace
+is centered and is 3.5" long (so 1.75" forward and rear of the specified y coordinate).
+
+/**/
+module knee_brace(length, angle) {
+    angle = angle % 90;
+    if (angle > 0) {
+        cut_knee_brace(length, angle);
+    } else {
+        rotate([0, 0, 180]) cut_knee_brace(length, -angle);
+    }
+}
+
+module cut_knee_brace(length, angle) {
+    // The length of the brace against the surface of the beam
+    beam_surface = 5.5/cos(angle);
+    // The additional length required for a 2" deep beam tenon
+    beam_tenon_length = 2*cos(abs(angle));
+    // The length of the brace against the surface of the post
+    post_surface = 5.5/cos(90-angle);
+    // The additional length required for a 2" deep post tenon
+    post_tenon_length = 2*cos(90-abs(angle));
+    // The minimum allowable length given the brace's width
+    min_length = (beam_surface * sin(angle)) + (post_surface * sin(90-angle));
+    assert(length >= min_length, str("length must be at least ", min_length, " inches."));
+    
+    original_length = beam_tenon_length + length + post_tenon_length;
+    
+    inside_length = length - min_length;
+    z_offset = -cos(angle) * length;
+    x_offset = cos(90-angle) * length;
+
+    translate([0, -1.75, 0]) difference() {
+        translate([x_offset, 0, 0]) 
+            rotate([0, angle, 0]) 
+                translate([-5.5, 0, -post_tenon_length-length]) 
+                    cube([5.5, 3.5, original_length]);
+        // Beam tenon bearing end cut
+        translate([x_offset, -1, 0]) cube(5.5);
+        // Beam tenon end cut
+        translate([x_offset-beam_surface-0.5, -1, 2]) cube([beam_surface+1, 5.5, 5.5]);
+        // Beam tenon forward cheek/shoulder cuts
+        translate([x_offset-beam_surface-0.5, -1, 0]) cube([beam_surface+1, 2, 2.5]);
+        // Beam tenon rear cheek/shoulder cuts
+        translate([x_offset-beam_surface-0.5, 2.5, 0]) cube([beam_surface+1, 2, 2.5]);
+        // Post tenon bearing end cut
+        translate([-5.5, -1, z_offset-5.5]) cube(5.5);
+        // Post tenon end cut
+        translate([-2-5.5,-1,z_offset]) cube([5.5, 5.5, post_surface]);
+        // Post tenon forward cheek/shoulder cuts
+        translate([-5.5,-1,z_offset-0.5]) cube([5.5, 2, post_surface*2]);
+        // Post tenon rear cheek/shoulder cuts
+        translate([-5.5,2.5,z_offset-0.5]) cube([5.5, 2, post_surface*2]);
+    }
+}
+
+knee_brace(32, -30);
+knee_brace(60, 45);
+
+//structure();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
