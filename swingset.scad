@@ -47,6 +47,10 @@ module structure() {
     northeast_beam(); 
     northwest_beam();
     north_rafters();
+    color("darkblue") {
+        swing_beam_braces();
+        tower_beam_braces();
+    }
     
     /*
     // Still a work in progress, obvs
@@ -202,6 +206,28 @@ module northwest_beam() {
     translate([0, depth, 0]) northeast_beam();
 }
 
+module swing_beam_braces() {
+    length = 30;
+    angle = 60;
+    center_posts_north_side = (tower_rafters - 1) * rafter_spacing + 5.5;
+    north_posts_south_side = (tower_rafters + swing_rafters - 1) * rafter_spacing;
+    translate([center_posts_north_side, 5.5/2, 91.25]) knee_brace(length, angle);
+    translate([center_posts_north_side, depth+5.5/2, 91.25]) knee_brace(length, angle);
+    translate([north_posts_south_side, 5.5/2, 91.25]) knee_brace(length, -angle);
+    translate([north_posts_south_side, depth+5.5/2, 91.25]) knee_brace(length, -angle);
+}
+
+module tower_beam_braces() {
+    length = 48;
+    angle = 60;
+    south_posts_north_side = 5.5;
+    center_posts_south_side = (tower_rafters - 1) * rafter_spacing;
+    translate([south_posts_north_side, 5.5/2, 139.25]) knee_brace(length, angle);
+    translate([south_posts_north_side, depth+5.5/2, 139.25]) knee_brace(length, angle);
+    translate([center_posts_south_side, 5.5/2, 139.25]) knee_brace(length, -angle);
+    translate([center_posts_south_side, depth+5.5/2, 139.25]) knee_brace(length, -angle);
+}
+
 
 module rafter() {
     length = (2 * overhang) + depth + 5.5;
@@ -272,15 +298,21 @@ module knee_brace(length, angle) {
 }
 
 module cut_knee_brace(length, angle) {
-    // Tenon depth
+    tenon_thickness = 1.5;
     tenon_depth = 3.5;
     
+    // Timber dimensions
+    x_dimension = 5.5;
+    y_dimension = 3.5;
+    large_dimension = max(x_dimension, y_dimension);
+    small_dimension = min(x_dimension, y_dimension);
+    
     // The length of the brace against the surface of the beam
-    beam_surface = 5.5/cos(angle);
+    beam_surface = x_dimension/cos(angle);
     // The additional length required for the beam tenon's depth
     beam_tenon_length = tenon_depth*cos(abs(angle));
     // The length of the brace against the surface of the post
-    post_surface = 5.5/cos(90-angle);
+    post_surface = x_dimension/cos(90-angle);
     // The additional length required for the post tenon's depth
     post_tenon_length = tenon_depth*cos(90-abs(angle));
     // The minimum allowable length given the brace's width
@@ -293,31 +325,35 @@ module cut_knee_brace(length, angle) {
     z_offset = -cos(angle) * length;
     x_offset = cos(90-angle) * length;
 
-    translate([0, -1.75, 0]) difference() {
+    translate([0, -(y_dimension/2), 0]) difference() {
         translate([x_offset, 0, 0]) 
             rotate([0, angle, 0]) 
-                translate([-5.5, 0, -post_tenon_length-length]) 
-                    cube([5.5, 3.5, original_length]);
+                translate([-x_dimension, 0, -post_tenon_length-length]) 
+                    cube([x_dimension, y_dimension, original_length]);
         // Beam tenon bearing end cut
-        translate([x_offset, -1, 0]) cube(5.5);
+        translate([x_offset, -1, 0]) cube([x_dimension, y_dimension+2, large_dimension]);
         // Beam tenon end cut
-        translate([x_offset-beam_surface-0.5, -1, tenon_depth]) cube([beam_surface+1, 5.5, 5.5]);
+        translate([x_offset-beam_surface-0.5, -y_dimension/2, tenon_depth]) cube([beam_surface+1, y_dimension*2, large_dimension]);
+        
         // Beam tenon forward cheek/shoulder cuts
-        translate([x_offset-beam_surface-0.5, -1, 0]) cube([beam_surface+1, 2, tenon_depth+0.5]);
+        translate([x_offset-beam_surface-0.5, -tenon_thickness/2, 0]) cube([beam_surface+1, y_dimension/2, tenon_depth+0.5]);
         // Beam tenon rear cheek/shoulder cuts
-        translate([x_offset-beam_surface-0.5, 2.5, 0]) cube([beam_surface+1, 2, tenon_depth+0.5]);
+        translate([x_offset-beam_surface-0.5, y_dimension/2+tenon_thickness/2, 0]) cube([beam_surface+1, y_dimension/2, tenon_depth+0.5]);
+        
+        
         // Post tenon bearing end cut
-        translate([-5.5, -1, z_offset-5.5]) cube(5.5);
+        translate([-x_dimension*2, -1, z_offset-large_dimension]) cube([x_dimension*2, y_dimension+2, large_dimension]);
         // Post tenon end cut
-        translate([-tenon_depth-5.5,-1,z_offset]) cube([5.5, 5.5, post_surface]);
+        translate([-tenon_depth-x_dimension,-.5,z_offset-.5]) cube([x_dimension, y_dimension+1, post_surface+.5]);
+        
         // Post tenon forward cheek/shoulder cuts
-        translate([-tenon_depth-0.5,-1,z_offset-0.5]) cube([tenon_depth+0.5, 2, post_surface*2]);
+        translate([-tenon_depth-0.5,-tenon_thickness/2,z_offset-0.5]) cube([tenon_depth+0.5, y_dimension/2, post_surface*2]);
         // Post tenon rear cheek/shoulder cuts
-        translate([-tenon_depth-0.5,2.5,z_offset-0.5]) cube([tenon_depth+0.5, 2, post_surface*2]);
+        translate([-tenon_depth-0.5,y_dimension/2+tenon_thickness/2,z_offset-0.5]) cube([tenon_depth+0.5, y_dimension/2, post_surface*2]);
     }
 }
 
-//structure();
+structure();
 
 
 
