@@ -47,7 +47,7 @@ module structure() {
     northeast_beam(); 
     northwest_beam();
     north_rafters();
-    color("darkblue") {
+    color("brown") {
         swing_beam_braces();
         tower_beam_braces();
     }
